@@ -22,17 +22,6 @@ describe Oystercard do
 		end
 	end
 
-	describe '#deduct' do
-		it { is_expected.to respond_to(:deduct).with(1).argument }
-
-		it 'deducts an amount from the card balance' do
-			subject.top_up(10)
-			subject.deduct(3)
-
-			expect(subject.balance).to eq(7)
-		end
-	end
-
 	describe 'in_journey?' do
 		before(:each) do
 			entry_station = class_double(Station)
@@ -65,4 +54,13 @@ describe Oystercard do
 			expect{ subject.touch_in }.to raise_error ("You do not have enough funds to travel, please top up")
 		end
 	end
+
+	describe 'charging for a journey' do
+		it 'a user should be charged at least the minimum amount for a journey' do
+			subject.top_up(10)
+			subject.touch_in
+			expect{ subject.touch_out }.to change{ subject.balance }.by(-Oystercard::MIN_CHARGE)
+		end
+	end
+
 end
