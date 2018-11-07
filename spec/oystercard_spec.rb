@@ -2,35 +2,45 @@ require 'oystercard'
 require 'station'
 
 describe Oystercard do
+	context 'testing card funds' do
+		let(:max_balance) {max_balance = Oystercard::MAX_BALANCE}
 
-	it 'has a balance of 0' do
-		expect(subject.balance).to eq(0)
-	end
-
-	describe '#touch_in' do
-		it 'records the name of entry_station when touched in' do
-			entry_station = double(:name => "Barbican")
-			subject.top_up(10)
-			subject.touch_in(entry_station)
-			expect(subject.entry_station).to eq("Barbican")
+		it 'new card has a balance of 0' do
+			expect(subject.balance).to eq(0)
 		end
-	end
 
-	describe '#top_up' do
-		it { is_expected.to respond_to(:top_up).with(1).argument }
+		describe '#top_up' do
+			it { is_expected.to respond_to(:top_up).with(1).argument }
 
-		it 'can be topped up with an amount' do
-			subject.top_up(10)
+			it 'can be topped up with an amount' do
+				subject.top_up(max_balance)
 
-			expect(subject.balance).to eq(10)
+				expect(subject.balance).to eq(max_balance)
+			end
 		end
 
 		it 'raises an error if maximum balance is exceeded' do
-			maximum_balance = Oystercard::MAX_BALANCE
-			subject.top_up(maximum_balance)
-			expect{ subject.top_up(10) }.to raise_error ("Maximum balance of £#{maximum_balance} exceeded")
+			subject.top_up(max_balance)
+			expect{ subject.top_up(max_balance) }.to raise_error("Maximum balance of £#{max_balance} exceeded")
 		end
 	end
+	context 'testing journey methods' do
+		let(:entry_station) { entry_station = double }
+		
+		before (:each) do
+			# When double created here it is not recognized within methods
+			allow(entry_station).to receive(:name) {"Barbican"}
+		end
+
+		describe '#touch_in' do
+			it 'records the name of entry_station when touched in' do
+				subject.top_up(10)
+				subject.touch_in(entry_station)
+				expect(subject.entry_station).to eq("Barbican")
+			end
+		end
+	end
+	
 
 	describe '#in_journey?' do
 		it 'a newly created card should not be in journey' do
@@ -51,9 +61,8 @@ describe Oystercard do
 			entry_station = double(:name => "Barbican")
 			subject.top_up(10)
 			subject.touch_in(entry_station)
-			subject.touch_out
 
-			expect(subject.in_journey?).to eq(false)
+			expect{ subject.touch_out }.to change{ subject.in_journey }.from(true).to(false)
 		end
 	end
 
@@ -72,7 +81,4 @@ describe Oystercard do
 			expect{ subject.touch_out }.to change{ subject.balance }.by(-Oystercard::MIN_CHARGE)
 		end
 	end
-
-
-
 end
