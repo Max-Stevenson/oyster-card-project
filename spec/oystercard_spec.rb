@@ -1,4 +1,5 @@
 require 'oystercard'
+require 'station'
 
 describe Oystercard do
 	it 'has a balance of 0' do
@@ -29,6 +30,31 @@ describe Oystercard do
 			subject.deduct(3)
 
 			expect(subject.balance).to eq(7)
+		end
+	end
+
+	describe 'in_journey?' do
+		before(:each) do
+			entry_station = class_double(Station)
+			allow(entry_station).to receive(:name).and_return("Barbican")
+		end
+		it 'a newly created card should not be in journey' do
+			card = Oystercard.new
+
+			expect(card.in_journey?).to eq(false)
+		end
+
+		it 'returns true if user has touch_in' do
+			subject.touch_in
+
+			expect(subject.in_journey?).to eq(true)
+		end
+
+		it 'returns false after a user has touch_in and touch_out' do
+			subject.touch_in
+			subject.touch_out
+
+			expect(subject.in_journey?).to eq(false)
 		end
 	end
 end
