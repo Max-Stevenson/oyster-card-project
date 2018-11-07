@@ -45,16 +45,24 @@ describe Oystercard do
 		end
 
 		it 'returns true if user has touch_in' do
+			subject.top_up(10)
 			subject.touch_in
 
 			expect(subject.in_journey?).to eq(true)
 		end
 
 		it 'returns false after a user has touch_in and touch_out' do
+			subject.top_up(10)
 			subject.touch_in
 			subject.touch_out
 
 			expect(subject.in_journey?).to eq(false)
+		end
+	end
+
+	describe 'min balance testing' do
+		it 'error raised when user tries to touch in with less than min balance' do
+			expect{ subject.touch_in }.to raise_error ("You do not have enough funds to travel, please top up")
 		end
 	end
 end
