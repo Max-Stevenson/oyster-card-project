@@ -24,12 +24,15 @@ describe Oystercard do
 			expect{ subject.top_up(max_balance) }.to raise_error("Maximum balance of £#{max_balance} exceeded")
 		end
 	end
+
 	context 'testing journey methods' do
 		let(:entry_station) { entry_station = double }
+		let(:exit_station)	{exit_station = double}
 
 		before (:each) do
 			# When double created here it is not recognized within methods
 			allow(entry_station).to receive(:name) {"Barbican"}
+			allow(exit_station).to receive(:name) {"Paddington"}
 		end
 
 		describe '#touch_in' do
@@ -39,31 +42,37 @@ describe Oystercard do
 				expect(subject.entry_station).to eq("Barbican")
 			end
 		end
-	end
-	
 
-	describe '#in_journey?' do
-		it 'a newly created card should not be in journey' do
-			card = Oystercard.new
+		describe '#in_journey?' do
+			it 'a newly created card should not be in journey' do
+				card = Oystercard.new
 
-			expect(card.in_journey?).to eq(false)
+				expect(card.in_journey?).to eq(false)
+			end
+
+			it 'returns true if user has touch_in' do
+				subject.top_up(10)
+				subject.touch_in(entry_station)
+
+				expect(subject.in_journey?).to eq(true)
+			end
+
+			it 'returns false after a user has touch_in and touch_out' do
+				subject.top_up(10)
+				subject.touch_in(entry_station)
+				subject.touch_out(exit_station)
+
+				expect(subject.in_journey?).to eq(false)
+			end
 		end
 
-		it 'returns true if user has touch_in' do
-			entry_station = double(:name => "Barbican")
-			subject.top_up(10)
-			subject.touch_in(entry_station)
-
-			expect(subject.in_journey?).to eq(true)
-		end
-
-		it 'returns false after a user has touch_in and touch_out' do
-			entry_station = double(:name => "Barbican")
-			subject.top_up(10)
-			subject.touch_in(entry_station)
-			subject.touch_out
-
-			expect(subject.in_journey?).to eq(false)
+		describe '#touch_out' do
+			it 'entry_station should be reset to nil when touching out' do
+				subject.top_up(10)
+				subject.touch_in(entry_station)
+				expect{ subject.touch_out(exit_station) }.to change{ subject.entry_station }.from("Barbican").to(nil)
+			end
+			it { is_expected.to respond_to(:touch_out).with(1).argument }
 		end
 	end
 
@@ -77,18 +86,18 @@ describe Oystercard do
 	describe 'charging for a journey' do
 		it 'a user should be charged at least the minimum amount for a journey' do
 			entry_station = double(:name => "Barbican")
+			exit_station = double(:name => "Paddington")
 			subject.top_up(10)
 			subject.touch_in(entry_station)
-			expect{ subject.touch_out }.to change{ subject.balance }.by(-Oystercard::MIN_CHARGE)
+			expect{ subject.touch_out(exit_station) }.to change{ subject.balance }.by(-Oystercard::MIN_CHARGE)
 		end
 	end
 
-	describe '#touch_out' do
-		it 'entry_station should be reset to nil when touching out' do
-			entry_station = double(:name => "Barbican")
-			subject.top_up(10)
-			subject.touch_in(entry_station)
-			expect{ subject.touch_out }.to change{ subject.entry_station }.from("Barbican").to(nil)
+	context 'card travel history' do
+		it { is_expected.to have_attributes(:travel_history => (Array)) }
+
+		it 'travel_history should be empty by default' do
+			expect(subject.travel_history).to be_empty
 		end
 	end
 end
