@@ -26,7 +26,7 @@ describe Oystercard do
 	end
 	context 'testing journey methods' do
 		let(:entry_station) { entry_station = double }
-		
+
 		before (:each) do
 			# When double created here it is not recognized within methods
 			allow(entry_station).to receive(:name) {"Barbican"}
@@ -61,8 +61,9 @@ describe Oystercard do
 			entry_station = double(:name => "Barbican")
 			subject.top_up(10)
 			subject.touch_in(entry_station)
+			subject.touch_out
 
-			expect{ subject.touch_out }.to change{ subject.in_journey }.from(true).to(false)
+			expect(subject.in_journey?).to eq(false)
 		end
 	end
 
@@ -79,6 +80,15 @@ describe Oystercard do
 			subject.top_up(10)
 			subject.touch_in(entry_station)
 			expect{ subject.touch_out }.to change{ subject.balance }.by(-Oystercard::MIN_CHARGE)
+		end
+	end
+
+	describe '#touch_out' do
+		it 'entry_station should be reset to nil when touching out' do
+			entry_station = double(:name => "Barbican")
+			subject.top_up(10)
+			subject.touch_in(entry_station)
+			expect{ subject.touch_out }.to change{ subject.entry_station }.from("Barbican").to(nil)
 		end
 	end
 end
