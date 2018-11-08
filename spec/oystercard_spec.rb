@@ -73,6 +73,14 @@ describe Oystercard do
 				expect{ subject.touch_out(exit_station) }.to change{ subject.entry_station }.from("Barbican").to(nil)
 			end
 			it { is_expected.to respond_to(:touch_out).with(1).argument }
+
+			it 'should store the name of the station when touching out' do
+				subject.top_up(10)
+				subject.touch_in(entry_station)
+				subject.touch_out(exit_station)
+
+				expect(subject.exit_station).to eq("Paddington")
+			end
 		end
 	end
 
@@ -94,10 +102,22 @@ describe Oystercard do
 	end
 
 	context 'card travel history' do
+		let(:journey) { {entry_station: entry_station.name, exit_station: exit_station.name} }
+		let(:entry_station) { entry_station = double(:name => "Barbican") }
+		let(:exit_station) { exit_station = double(:name => "Paddington") }
+		
 		it { is_expected.to have_attributes(:travel_history => (Array)) }
 
 		it 'travel_history should be empty by default' do
 			expect(subject.travel_history).to be_empty
+		end
+
+		it 'should store journey in travel_history' do
+			subject.top_up(10)
+			subject.touch_in(entry_station)
+			subject.touch_out(exit_station)
+
+			expect(subject.travel_history).to include(journey)
 		end
 	end
 end
